@@ -1,7 +1,11 @@
 import type { Note } from '../types';
 
-// Scaffold stub: flipping the pinned flag and bumping updatedAt is delivered
-// by the pinning ticket. Keep the signature from the shared contract.
-export function togglePin(notes: Note[], _id: string, _now: number): Note[] {
-  return notes;
+// Toggles the pinned flag of the note with `id` and stamps `updatedAt` with
+// `now` (AC-07). Returns a new array: the matching note is replaced by a copy,
+// every other note keeps its reference, and the input array is never mutated.
+// An unknown id leaves every note unchanged.
+export function togglePin(notes: Note[], id: string, now: number): Note[] {
+  return notes.map((note) =>
+    note.id === id ? { ...note, pinned: !note.pinned, updatedAt: now } : note,
+  );
 }

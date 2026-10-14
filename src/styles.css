@@ -211,6 +211,21 @@ textarea {
   color: var(--color-danger);
 }
 
+.pin-toggle {
+  color: var(--color-fg-muted);
+}
+
+.pin-toggle--pinned {
+  color: var(--color-pin);
+  background: var(--color-pin-soft);
+}
+
+.pin-toggle--pinned:not(:disabled):hover {
+  color: var(--color-pin);
+  background: var(--color-pin-soft);
+  filter: brightness(0.96);
+}
+
 /* Mode toggle */
 .mode-toggle {
   display: inline-flex;
