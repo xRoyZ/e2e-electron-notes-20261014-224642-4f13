@@ -1,10 +1,16 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain, session, shell } = require('electron');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const isDev = !app.isPackaged;
 const devServerUrl = process.env.VITE_DEV_SERVER_URL || '';
+
+// The one address the app window is allowed to be on: its own built
+// dist/index.html. Anything else is a foreign target and gets refused by the
+// navigation guards below (AC-14).
+const INDEX_HTML_URL = pathToFileURL(path.join(__dirname, '..', 'dist', 'index.html')).href;
 
 // Strict production CSP (AC-15): scripts and every other resource may only come
 // from the app's own origin. Kept in sync with the meta tag injected into the
@@ -33,11 +39,35 @@ function applyProductionCsp() {
   });
 }
 
-function isInternalUrl(url) {
-  if (isDev && devServerUrl) {
-    return url.startsWith(devServerUrl);
+// Only the app's own page counts as internal: in development the Vite dev
+// server (the app served from source), in production the exact file URL of the
+// built dist/index.html. A hash or query on that same file stays internal; every
+// other target — another file, another path, a remote origin — does not.
+function isInternalUrl(target) {
+  if (typeof target !== 'string' || target.length === 0) {
+    return false;
   }
-  return url.startsWith('file://');
+  if (isDev && devServerUrl) {
+    return target.startsWith(devServerUrl);
+  }
+  const withoutFragment = target.split('#')[0].split('?')[0];
+  return withoutFragment === INDEX_HTML_URL;
+}
+
+// External links may only ever be handed to the system browser when they are a
+// real http(s) URL. Every other scheme (file:, javascript:, mailto:, custom
+// protocol handlers) is ignored (AC-14).
+function isSafeExternalUrl(url) {
+  if (typeof url !== 'string') {
+    return false;
+  }
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === 'http:' || parsed.protocol === 'https:';
 }
 
 function createWindow() {
@@ -60,8 +90,11 @@ function createWindow() {
   win.once('ready-to-show', () => win.show());
 
   // The app window never navigates to a foreign address and never opens a
-  // second window; external links go through the main process (AC-14).
-  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  // second window; a target that is not the app's own page is refused. External
+  // links go through the main process (AC-14).
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    return isInternalUrl(url) ? { action: 'allow' } : { action: 'deny' };
+  });
   win.webContents.on('will-navigate', (event, url) => {
     if (!isInternalUrl(url)) {
       event.preventDefault();
@@ -77,10 +110,15 @@ function createWindow() {
   return win;
 }
 
-// Scaffold stub for the open-external channel: it answers without acting so the
-// renderer's promise resolves. The safe system-browser handoff is delivered by
-// the external-links ticket.
-ipcMain.handle('open-external', async () => undefined);
+// The renderer's single OS channel: hand an http(s) URL to the system browser.
+// Any other scheme is a no-op, so the renderer can never talk the main process
+// into opening something dangerous (AC-14).
+ipcMain.handle('open-external', async (_event, url) => {
+  if (!isSafeExternalUrl(url)) {
+    return;
+  }
+  await shell.openExternal(url);
+});
 
 app.whenReady().then(() => {
   if (!isDev) {
@@ -99,3 +137,5 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+module.exports = { isInternalUrl, isSafeExternalUrl };
