@@ -409,6 +409,13 @@ textarea {
   border-bottom: 1px solid var(--color-border);
 }
 
+.editor-pane__title-group {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .editor-pane__title {
   flex: 1 1 auto;
   min-width: 0;
@@ -431,6 +438,13 @@ textarea {
   gap: var(--space-1);
 }
 
+.editor-pane__body-group {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .editor-pane__body {
   flex: 1 1 auto;
   min-height: 0;
@@ -446,6 +460,20 @@ textarea {
 
 .editor-pane__body:focus {
   outline: none;
+}
+
+/* AC-12: validation feedback appears only after touch or a save attempt */
+.editor-pane__field--error {
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+}
+
+.editor-pane__error {
+  margin: var(--space-0) 0;
+  padding: 0 var(--space-3) var(--space-1);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--color-danger);
 }
 
 /* Preview pane */
