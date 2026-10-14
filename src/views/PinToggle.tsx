@@ -5,18 +5,20 @@ export interface PinToggleProps {
   onToggle(id: string): void;
 }
 
-// Scaffold stub: renders a visibly disabled control so nothing on the screen
-// is silently ineffective. The pinning ticket fills the real behaviour.
-export function PinToggle({ note }: PinToggleProps) {
+// The pin control of a note row (AC-07). It reflects the note's pinned state
+// through its pressed style and `aria-pressed`, and hands the id to the shell
+// so the pinning and ordering become live.
+export function PinToggle({ note, onToggle }: PinToggleProps) {
+  const label = note.pinned ? 'Anheften aufheben' : 'Anheften';
   return (
     <button
       type="button"
-      className="icon-button pin-toggle"
+      className={`icon-button pin-toggle${note.pinned ? ' pin-toggle--pinned' : ''}`}
       data-testid={`pin-toggle-${note.id}`}
       aria-pressed={note.pinned}
-      aria-label={note.pinned ? 'Angeheftet' : 'Anheften'}
-      title="Anheften folgt in Kürze"
-      disabled
+      aria-label={label}
+      title={label}
+      onClick={() => onToggle(note.id)}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path
