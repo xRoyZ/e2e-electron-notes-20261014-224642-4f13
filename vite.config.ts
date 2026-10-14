@@ -6,6 +6,9 @@ import type { Plugin } from 'vite';
 // origin; no remote script, style, font, image or connect source is allowed.
 // Injected at build time so the Vite dev server (which needs its inline
 // React-refresh preamble) keeps working, while the built renderer is strict.
+// `frame-ancestors` is intentionally omitted: it is ignored (and logs a
+// console error) when delivered via a <meta> element. The packaged app must
+// carry any frame protection as a real HTTP header or a main-process policy.
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
@@ -16,7 +19,6 @@ const CONTENT_SECURITY_POLICY = [
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
-  "frame-ancestors 'none'",
 ].join('; ');
 
 function productionCspPlugin(): Plugin {
