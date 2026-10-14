@@ -129,7 +129,17 @@ export default function App() {
   }, []);
 
   const handleSelect = useCallback((id: string) => {
-    setState((current) => ({ ...current, selectedId: id, draft: null }));
+    setState((current) => {
+      const note = current.notes.find((entry) => entry.id === id);
+      if (!note) {
+        return { ...current, selectedId: id, draft: null };
+      }
+      return {
+        ...current,
+        selectedId: id,
+        draft: { id: note.id, title: note.title, body: note.body },
+      };
+    });
   }, []);
 
   const handleQueryChange = useCallback((query: string) => {
@@ -150,7 +160,12 @@ export default function App() {
       const now = Date.now();
       if (current.draft.id === null) {
         const note = createNote(current.draft.title, current.draft.body, now);
-        return { ...current, notes: [note, ...current.notes], draft: null, selectedId: note.id };
+        return {
+          ...current,
+          notes: [note, ...current.notes],
+          draft: { id: note.id, title: note.title, body: note.body },
+          selectedId: note.id,
+        };
       }
       const draft = current.draft;
       return {
@@ -158,7 +173,7 @@ export default function App() {
         notes: current.notes.map((note) =>
           note.id === draft.id ? applyEdit(note, { title: draft.title, body: draft.body }, now) : note,
         ),
-        draft: null,
+        draft: { id: draft.id, title: draft.title, body: draft.body },
         selectedId: draft.id,
       };
     });
@@ -177,6 +192,7 @@ export default function App() {
       ...current,
       notes: removeNote(current.notes, id),
       selectedId: current.selectedId === id ? null : current.selectedId,
+      draft: current.draft?.id === id ? null : current.draft,
     }));
   }, []);
 
